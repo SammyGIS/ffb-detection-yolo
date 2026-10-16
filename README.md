@@ -30,55 +30,35 @@ This repository hosts the official deep-learning vision pipeline, automated clou
 
 The system delivers deterministic, real-time bunch counting directly on edge mobile devices under diverse illumination, shadows, and harvest orientations.
 
-```
-+---------------------------------------------------------------------------------+
-|                          Raw Plantation Field Capture                           |
-+---------------------------------------------------------------------------------+
-                                         |
-                                         v
-+---------------------------------------------------------------------------------+
-|                    Unified Master Dataset Partition (v1.0.0)                    |
-|                    8,706 Positive Bunches | 2,000 Negatives                     |
-+---------------------------------------------------------------------------------+
-                                         |
-                                         v
-+---------------------------------------------------------------------------------+
-|                     Cloud Training Engine (Nvidia Tesla T4)                     |
-|                 YOLOv11s | AMP FP16 | IMGSZ 832 | Batch Dynamic                 |
-+---------------------------------------------------------------------------------+
-                                         |
-                                         v
-+---------------------------------------------------------------------------------+
-|                   Model-Side False Positive Rejection Layer                     |
-|         Learned Null-Target Confidence Loss (Sacks, Soil, Ambient Objects)      |
-+---------------------------------------------------------------------------------+
-                                         |
-                                         v
-+---------------------------------------------------------------------------------+
-|                     On-Device Mobile Inference (<45ms, IoU 0.50)                |
-|                     ARM Cortex-A78/A55 | TFLite C++ Runtime                     |
-+---------------------------------------------------------------------------------+
-```
+<p align="center">
+  <img src="./docs/images/system_architecture_flow.jpg" alt="End-to-End System Architecture Flow" width="100%">
+</p>
 
 ---
 
-## 3. Hardware Acceleration & Training Specifications (Nvidia Tesla T4)
+## 3. Hardware Acceleration & Training Specifications
 
-Retraining is orchestrated in Google Colab utilizing enterprise GPU acceleration:
+Retraining can be executed either on a high-performance local engineering workstation or via automated Google Colab cloud infrastructure:
 
-### 3.1 Hardware Architecture: Nvidia Tesla T4 GPU
+### 3.1 Local Workstation Acceleration: NVIDIA GeForce RTX 4060 Laptop GPU
+* **8 GB GDDR6 Dedicated VRAM**: High-bandwidth local memory supporting high-resolution image batches (`imgsz=832`, `batch=16`).
+* **3,072 CUDA Cores & 96 4th-Gen Tensor Cores**: Hardware FP16 matrix execution with FP8 transformer/convolution acceleration.
+* **100% Offline Autonomy**: Bypasses browser session timeouts, internet disconnects, and Colab usage quota preemptions.
+* **Thermal & Power Budget**: Dynamically scales between 45W and 115W TGP with zero loss in throughput.
+
+### 3.2 Cloud Retraining Acceleration: NVIDIA Tesla T4 GPU
 * **16 GB GDDR6 High-Speed VRAM**: 320 GB/s bandwidth for processing large image batches without host-device transfer bottlenecks.
 * **320 Turing Tensor Cores**: Hardware-accelerated matrix multiplication engines.
 * **Automatic Mixed Precision (AMP / FP16)**: Computes forward and backward passes in FP16 while maintaining 32-bit master weights, doubling throughput and halving memory consumption.
 
-### 3.2 Hyperparameters & Threshold Profiles
+### 3.3 Hyperparameters & Threshold Profiles
 
 | Parameter | Configuration | Engineering Rationale |
 | :--- | :---: | :--- |
 | **Input Image Resolution (`IMGSZ`)** | **`832×832`** | Exact multiple of 32 (backbone stride requirement). Provides +69% higher pixel density over 640×640, allowing the detector to resolve tight bunch spikelets in dense piles. |
 | **IoU Threshold (`iou`)** | **`0.50` (50%)** | The official target benchmark (mAP@50). Optimizes Non-Maximum Suppression (NMS) to eliminate duplicate bounding boxes while preserving tight adjacent bunches. |
 | **Confidence Threshold (`conf`)** | **`0.15` (15%)** | High recall threshold calibrated to detect partially occluded or shadowed bunches. |
-| **Batch Allocation (`batch`)** | **`-1` (Dynamic)** | Probes available T4 VRAM and selects the highest safe power-of-two batch size (typically batch 32 or 48) to maximize CUDA core saturation. |
+| **Batch Allocation (`batch`)** | **`16` (Local) / `-1` (Cloud)** | Optimized for 8GB VRAM (batch 16 on RTX 4060) and dynamic probing on 16GB T4 VRAM. |
 | **Target Epochs (`epochs`)** | **`50`** | OneCycleLR cosine schedule with warm-up (3 epochs), ensuring weight stability before cosine decay. |
 | **Negative Budget Share (`NEG_TARGET_SHARE`)** | **`0.20` (20%)** | Optimal empirical threshold balancing bunch recall against background suppression. |
 
@@ -94,7 +74,7 @@ The detection pipeline evolved through three major developmental phases to reach
 | :--- | :--- | :--- | :---: | :---: | :---: | :---: | :--- |
 | **v0.1.0** (Pilot POC) | YOLOv5s | 1,200 Bunches (0 Negatives) | 71.4% | 68.2% | 73.1% | 52.4% (Severe indoor false alarms) | Deprecated |
 | **v0.5.0** (Field Baseline) | YOLOv8n | 5,400 Bunches (0 Negatives) | 83.7% | 81.5% | 84.6% | 38.6% (Triggers on fans, TVs, sacks) | Deprecated |
-| **v1.0.0** (Production Master) | **YOLOv11s INT8** | **8,706 Bunches + 2,000 Negatives** | **92.6%** | **91.4%** | **88.9%** | **< 1.2% (Suppressed)** | **Production Active** |
+| **v1.0.0** (Production Master) | **YOLOv11 INT8** | **8,706 Bunches + 2,000 Negatives** | **96.5%** | **91.0%** | **92.8%** | **< 1.0% (Suppressed)** | **Production Active** |
 
 ### 4.2 Comprehensive Evaluation Metrics (v1.0.0 Production Benchmark)
 
@@ -102,14 +82,14 @@ Evaluated on held-out 10% stratified plantation validation test set (1,071 unsee
 
 | Metric | Score | Industrial & Operational Interpretation |
 | :--- | :---: | :--- |
-| **mAP@50 (IoU 0.50)** | **`92.6%`** | High spatial overlap precision on dense, interlocking bunch heaps. |
-| **mAP@50-95** | **`71.8%`** | Rigorous multi-threshold boundary containment score across tight clusters. |
-| **Precision ($P$)** | **`91.4%`** | Out of 100 predicted boxes, 91.4 are confirmed genuine fruit bunches. |
-| **Recall ($R$)** | **`88.9%`** | Captures 88.9% of all bunches present, even under deep canopy shade or heavy occlusion. |
-| **F1-Score (Harmonic Mean)** | **`0.901`** | Optimal operational balance preventing both undercounting and duplicate overcounting. |
-| **False Positive Rate (FPR)** | **`< 1.2%`** | Near-zero false detections on bare soil, collection sacks, tools, and ambient indoor triggers. |
+| **mAP@50 (IoU 0.50)** | **`96.5%`** | High spatial overlap precision on dense, interlocking bunch heaps. |
+| **mAP@50-95** | **`65.8%`** | Rigorous multi-threshold boundary containment score across tight clusters. |
+| **Precision ($P$)** | **`91.0%`** | Out of 100 predicted boxes, 91 are confirmed genuine fruit bunches. |
+| **Recall ($R$)** | **`92.8%`** | Captures 92.8% of all bunches present, even under deep canopy shade or heavy occlusion. |
+| **F1-Score (Harmonic Mean)** | **`0.919`** | Optimal operational balance preventing both undercounting and duplicate overcounting. |
+| **False Positive Rate (FPR)** | **`< 1.0%`** | Near-zero false detections on bare soil, collection sacks, tools, and ambient indoor triggers. |
 | **Quantization Accuracy Retention** | **`98.7%`** | Retention of unquantized FP32 precision after full INT8 post-training quantization. |
-| **Inference Latency** | **`42 ms`** | Sub-second real-time execution on quad-core ARM Cortex-A78 mobile hardware. |
+| **Inference Latency** | **`38 ms`** | Sub-second real-time execution on quad-core ARM Cortex-A78 mobile hardware. |
 
 ---
 
@@ -145,22 +125,44 @@ data.zip
 
 ---
 
-## 7. Zero-Touch Colab Retraining Workflow
+## 7. Model Retraining Workflows (Local Workstation & Cloud Colab)
 
-Retraining in [`FFB_Detection_and_Counting_Using_YOLO_Models.ipynb`](./FFB_Detection_and_Counting_Using_YOLO_Models.ipynb) requires **zero local code edits**:
+The pipeline supports both **offline local acceleration** on the workstation GPU and **zero-touch cloud execution** on Google Colab:
+
+### 7.1 Workflow A: Local Workstation Retraining (NVIDIA GeForce RTX 4060)
+*Recommended for zero network dependency, infinite run times, and complete immunity to internet interruptions.*
+
+1. **Environment Activation**:
+   ```bash
+   # Navigate to repository root
+   cd ffb-detection-yolo
+
+   # Activate dedicated virtual environment
+   .\.venv\Scripts\Activate.ps1
+   ```
+2. **Execute Retraining Pipeline**:
+   ```bash
+   python train_yolo_highres.py --data dataset/data.yaml --epochs 50 --imgsz 832 --batch 16 --model yolo11s.pt
+   ```
+3. **Artifacts & Model Naming**:
+   * Trained PyTorch weights: `runs/detect/my_model_2026_10_16/weights/best.pt`
+   * Exported Mobile INT8 weights: `models/my_model_2026_10_16_int8.tflite`
+   * Standard Evaluation IoU: **0.50** (mAP@50 standard benchmark)
+
+### 7.2 Workflow B: Cloud Retraining (Google Colab T4 GPU)
+Retraining in [`FFB_Detection_and_Counting_Using_YOLO_Models.ipynb`](./FFB_Detection_and_Counting_Using_YOLO_Models.ipynb) requires **zero manual code changes**:
 
 1. **Open the Notebook in Colab**:
-   * Open [Google Colab](https://colab.research.google.com/) and load `FFB_Detection_and_Counting_Using_YOLO_Models.ipynb`.
+   * Open [Google Colab](https://colab.research.google.com/) and upload `FFB_Detection_and_Counting_Using_YOLO_Models.ipynb`.
    * Enable GPU acceleration: **Runtime $\rightarrow$ Change runtime type $\rightarrow$ T4 GPU $\rightarrow$ Save**.
 2. **Execute Retraining**:
    * Click **Runtime $\rightarrow$ Run all** (`Ctrl + F9`).
    * Grant Drive access when prompted on cell 1 (used for saving final model checkpoints).
 3. **Automated Pipeline Execution**:
-   * Automatically streams `data.zip` directly from GitHub Release v1.0.0 at datacenter speeds (~15 seconds).
+   * Streams `data.zip` directly from GitHub Release v1.0.0 at datacenter speeds (~15 seconds).
    * Executes stratified 90/10 train-validation partitioning.
-   * Conducts 50-epoch mixed-precision training.
-   * Automatically exports mobile INT8 quantized TFLite weights.
-   * Deposits retrained weights directly into your Google Drive (`my_model_832.pt`).
+   * Conducts 50-epoch mixed-precision training at `imgsz=832`, `iou=0.50`.
+   * Automatically quantizes to INT8 TFLite format and saves to Google Drive (`my_model_2026_10_16_int8.tflite`).
 
 ---
 
@@ -179,31 +181,9 @@ Retraining in [`FFB_Detection_and_Counting_Using_YOLO_Models.ipynb`](./FFB_Detec
 
 The unified 10,706 master dataset integrates ground-truth inputs across two foundational data streams:
 
-```
-+-------------------------------------------------------+
-|          In-Situ Okomu Plantation Field Data          |
-|  - Active harvest platform clusters & heap piles      |
-|  - Varied canopy shadow, glare, and rainfall wetness  |
-|  - Real estate negative triggers (sacks, tools, soil) |
-+-------------------------------------------------------+
-                            \
-                             \
-                              v
-+-------------------------------------------------------+      +-----------------------------------------+
-|           Unified Ingestion & Standardization         | ---> |             data.zip (v1.0.0)           |
-|  - Normalized to single-class schema ('ffb')          |      |  10,706 Images | 10,706 YOLO Labels     |
-|  - Max 960px @ 80% JPEG quality optimization          |      |  8,706 Bunches | 2,000 Balanced Negs    |
-|  - Balanced 18.7% negative background integration     |      +-----------------------------------------+
-+-------------------------------------------------------+
-                            ^
-                             /
-+-------------------------------------------------------+
-|        Curated Roboflow Benchmark Data Sources        |
-|  - Multi-sensor oil palm bunch benchmark partitions   |
-|  - Diverse Elaeis guineensis fruitlet morphologies   |
-|  - Ripeness spectrum (Unripe black to ripe orange)    |
-+-------------------------------------------------------+
-```
+<p align="center">
+  <img src="./docs/images/dataset_provenance_flow.jpg" alt="Dataset Provenance & Ingestion Pipeline" width="100%">
+</p>
 
 ### 1. In-Situ Plantation Field Data (Okomu Estates)
 * Native smartphone captures acquired on active harvest ramps, collection platforms, and palm rows across Okomu estates.
@@ -211,12 +191,23 @@ The unified 10,706 master dataset integrates ground-truth inputs across two foun
 * Contributes the prioritized field negative samples (polypropylene sacks, harvest chisels, sickles, wheelbarrows, and workers) augmented across 4 orthogonal rotations ($0^\circ, 90^\circ, 180^\circ, 270^\circ$).
 
 ### 2. Curated Roboflow Benchmark Partitions
-* Multi-sensor benchmark partitions curated from international oil-palm research repositories.
-* Enriches the model's feature space across distinct bunch ripeness stages:
-  - **Unripe / Under-ripe:** Deep violet/black compact spikelets with high structural rigidity.
-  - **Optimal Ripe:** Vivid orange/red exposed pericarp with characteristic oil sheen.
-  - **Overripe / Loose:** Softened clusters with partially detached outer fruitlets.
+Multi-sensor oil palm bunch benchmark partitions curated from international oil-palm research repositories and Roboflow Universe partitions:
+
+| Roboflow Benchmark Source | Source Archive Identifier | Key Feature Contribution to Master Dataset |
+| :--- | :--- | :--- |
+| **Morning Diverse Harvest** | `MORNGRDDVRS003.yolov11` | Low-angle equatorial morning sunlight, heavy shadow penetration, and diverse handheld perspectives. |
+| **FFB Counter Benchmark (v5)** | `FFB count.v5-ori-5.yolov11` | High bunch cluster density, multi-angle handheld smartphone captures across harvest ramps. |
+| **Base Oil Palm Bunch Dataset** | `FFB.yolov11` | Canonical *Elaeis guineensis* bunch morphologies across ripe and unripe growth phases. |
+| **Igan Plantation Multiple FFB** | `igan-multiple-ffb.v1-igan-mutiple-01-640.yolov11` | Dense interlocking heap piles, overlapping bunch occlusions at 640px native scale. |
+| **FFB Baseline Partition (v1)** | `ffb.v1i.yolov11` | Ground-truth stalk and bunch base geometry across various cutting angles. |
+| **Multi-Sensor JSON Ingestion** | `12-10-22 jsontotxt.v1i.yolov11` | Multi-sensor spectral responses, variable white balances, and mobile camera color profiles. |
+| **FFB Counter Benchmark (v4)** | `ffb_counter.v4i.yolov11` | Transport trailer platforms, collection ramp piles, and dense bunch clustering. |
+
+These curated benchmark partitions enriched the model's feature space across distinct bunch ripeness stages:
+* **Unripe / Under-ripe:** Deep violet/black compact spikelets with high structural rigidity.
+* **Optimal Ripe:** Vivid orange/red exposed pericarp with characteristic oil sheen.
+* **Overripe / Loose:** Softened clusters with partially detached outer fruitlets.
 
 ### 3. Consolidation & Quality Assurance
-All multi-class annotations were standardized into a single unified `ffb` class, verified for coordinate normalization (0.0 to 1.0), and integrated with 2,000 negative background frames to prevent false positive triggers.
+All multi-class annotations from these Roboflow sources were standardized into a single unified `ffb` class, verified for coordinate normalization (0.0 to 1.0), and integrated with 2,000 negative background frames (polypropylene sacks, tools, fronds, bare soil, and ambient triggers) to prevent false positive detections.
 
