@@ -7,6 +7,7 @@
 *.7z
 
 # ── Datasets & Images (Large media folders) ──────────────────────────────────
+dataset/
 custom_data/
 dataset_compact/
 OkomuDataset/
@@ -27,6 +28,7 @@ my_model_*/
 *.weights
 
 # ── Backups & Checkpoints ───────────────────────────────────────────────────
+.venv/
 notebook_backups/
 .ipynb_checkpoints/
 __pycache__/
