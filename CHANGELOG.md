@@ -42,7 +42,7 @@ To establish a single source of truth and eliminate disk clutter, all obsolete d
 | Deleted Item | Size | Reason for Deletion |
 |---|:---:|---|
 | `custom_data/data.zip` | 4,447.0 MB | Redundant 4.5 GB uncompressed raw duplicate zip |
-| `OkomuDataset/` | 4,876.5 MB | Retired early April 2026 experimental branch (Ope & Samuel datasets; all valid positives were merged into master `data.zip`) |
+| `OkomuDataset/` | 4,876.5 MB | Retired early April 2026 experimental branch (preliminary pilot partitions A & B; all verified annotations merged into master `data.zip`) |
 | `dataset_compact/` | 1,592.4 MB | Local staging folder used to build `data.zip` |
 | `negatives_extra/` | 1,397.9 MB | Retired overflow web stock from 14-Oct |
 | `MORNGRDDVRS003.yolov11.zip` | 1,295.5 MB | Retired early morning divers Roboflow export |
