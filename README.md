@@ -10,6 +10,7 @@ All fragmented historical datasets (Ope's data, Samuel's data, early Roboflow ex
 
 * **Location:** [`ffb-count-detection/data.zip`](file:///c:/Users/Admin/Documents/DOYSAM/Okomu/Okomu%20App%20Development%20Project/ffb-count-detection/data.zip)
 * **Archive Size:** **1.55 GB** *(optimized down from 4.5 GB uncompressed raw)*
+* **Production Model Artifact:** [**Download `my_model_int8.tflite` (v1.0.0)**](https://github.com/SammyGIS/ffb-detection-yolo/releases/tag/v1.0.0)
 * **Total Images:** **10,706 images**
 * **Total Labels:** **10,706 label files** (normalized YOLO `.txt` bounding boxes & blank background files)
 * **Max Dimension:** `960px` @ 80% JPEG quality *(crisp features with zero downsampling artifacts for 640px/800px YOLO training)*
