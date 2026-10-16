@@ -21,6 +21,7 @@ my_model_*/
 *.pt
 *.onnx
 *.tflite
+converted_model/
 !models/*.tflite
 *.engine
 *.bin
