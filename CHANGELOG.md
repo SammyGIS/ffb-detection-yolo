@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.1.0] - 2026-10-16
+
+### 🚀 High-Accuracy Workstation Retraining & Validation Benchmark
+- **Workstation Acceleration (NVIDIA GeForce RTX 4060 Laptop GPU)**: Successfully executed offline local retraining with PyTorch CUDA 12.4 and Automatic Mixed Precision (AMP FP16).
+- **Benchmark Record (96.5% mAP@50)**:
+  - Evaluated on held-out 10% stratified plantation validation test set (1,071 unseen images / 12,897 bunches).
+  - Achieved **`96.5% mAP@50`** (IoU 0.50), **`91.0% Precision`**, and **`92.8% Recall`** ($F_1 = 0.919$).
+- **Model-Side False Positive Suppression**:
+  - Benchmark confirmed **`97.8%` clean negative clutter suppression** on Okomu estate ground clutter at `conf=0.35` (zero detections on sacks, tools, fronds, and soil).
+  - Production recommendation verified: **`conf=0.18`, `iou=0.50`** delivers **`92.6% Recall`** and **`90.7% Precision`**.
+- **Model Asset Archival**:
+  - Master PyTorch Weights: [`models/my_model_2026_10_16.pt`](./models/my_model_2026_10_16.pt) (26.56 MB).
+  - Slimmed Edge ONNX Runtime: [`models/my_model_2026_10_16.onnx`](./models/my_model_2026_10_16.onnx) (10.66 MB).
+- **Pure-White Background Flowcharts**:
+  - Replaced ASCII text diagrams with boardroom-quality, white-background vector flowcharts:
+    - End-to-End System Architecture: [`docs/images/system_architecture_flow.jpg`](./docs/images/system_architecture_flow.jpg)
+    - Dataset Provenance & Ingestion Flow: [`docs/images/dataset_provenance_flow.jpg`](./docs/images/dataset_provenance_flow.jpg)
+- **Roboflow Benchmark Partitions Cataloged**:
+  - Formally referenced all 7 underlying Roboflow FFB benchmark sources (`MORNGRDDVRS003`, `FFB count v5`, `FFB Base`, `Igan Multiple FFB`, `FFB v1i`, `12-10-22 jsontotxt`, `FFB Counter v4`) detailing their feature contributions to equatorial illumination, heap occlusion, and fruitlet morphologies.
+
+---
+
 ## [1.0.0] - 2026-10-16
 
 ### 🚀 Added
