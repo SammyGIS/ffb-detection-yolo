@@ -26,22 +26,28 @@ All fragmented historical datasets (Ope's data, Samuel's data, early Roboflow ex
 
 ---
 
-## 2. Training in Google Colab (Quick Start)
+## 2. Training in Google Colab (100% Hands-Free & Zero-Code)
 
-The retraining pipeline is completely automated in [`FFB_Detection_and_Counting_Using_YOLO_Models.ipynb`](file:///c:/Users/Admin/Documents/DOYSAM/Okomu/Okomu%20App%20Development%20Project/ffb-count-detection/FFB_Detection_and_Counting_Using_YOLO_Models.ipynb):
+> **Do I need to change or write any code in the notebook?**  
+> **NO!** The notebook is 100% plug-and-play. All obsolete API keys, Roboflow scripts, and web downloaders have been permanently removed. Everything is pre-configured to run end-to-end automatically.
 
-1. **Upload `data.zip`** to the root of your Google Drive (`My Drive/data.zip`).
-2. **Open the notebook** in Google Colab.
-3. Select **GPU Runtime**: `Runtime -> Change runtime type -> T4 GPU`.
-4. Click **Runtime $\rightarrow$ Run all** (`Ctrl+F9`).
+### The Only 3 Clicks You Make in Colab:
+1. **Upload `data.zip` to Google Drive**:
+   - Place [`data.zip`](file:///c:/Users/Admin/Documents/DOYSAM/Okomu/Okomu%20App%20Development%20Project/ffb-count-detection/data.zip) directly at the top level of your Google Drive (**My Drive**).
+2. **Open the Notebook in Colab**:
+   - Go to [Google Colab](https://colab.research.google.com/) $\rightarrow$ **Upload** $\rightarrow$ select [`FFB_Detection_and_Counting_Using_YOLO_Models.ipynb`](file:///c:/Users/Admin/Documents/DOYSAM/Okomu/Okomu%20App%20Development%20Project/ffb-count-detection/FFB_Detection_and_Counting_Using_YOLO_Models.ipynb).
+   - Ensure the GPU accelerator is enabled: **Runtime $\rightarrow$ Change runtime type $\rightarrow$ T4 GPU $\rightarrow$ Save**.
+3. **Click Run**:
+   - Click **Runtime $\rightarrow$ Run all** (or press `Ctrl + F9`).
+   - When the first cell prompts you: *"Permit this notebook to access your Google Drive files?"* $\rightarrow$ Click **"Connect to Google Drive"**.
 
-### What Happens Automatically:
-* Mounts Google Drive and unzips `data.zip` in ~20 seconds.
-* Automatically verifies embedded `classes.txt` (`['ffb']`) and generates `data.yaml`.
-* Splits 90% into `train/` and 10% into `validation/`.
-* Trains YOLOv11 with balanced Objectness / Confidence Loss.
-* Automatically exports `.pt` weights and mobile INT8 TFLite model.
-* Zips and saves the final model artifacts directly back to your Google Drive!
+### What Happens Automatically (Zero Intervention):
+* Auto-finds and mounts Google Drive, extracting `data.zip` in ~20 seconds.
+* Verifies embedded `classes.txt` (`['ffb']`) and generates `data.yaml`.
+* Automatically performs the 90% `train/` and 10% `validation/` split.
+* Retrains the YOLOv11 model with balanced Objectness / Confidence Loss.
+* Automatically exports `.pt` weights and INT8 mobile TFLite models.
+* Zips and saves the final retrained model package directly back to your Google Drive!
 
 ---
 
