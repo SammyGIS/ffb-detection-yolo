@@ -1,0 +1,39 @@
+# ── Archives & Zips (>25MB) ──────────────────────────────────────────────────
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+
+# ── Datasets & Images (Large media folders) ──────────────────────────────────
+custom_data/
+dataset_compact/
+OkomuDataset/
+negatives/
+negatives_extra/
+neg_drive/
+
+# ── Model Weights & Exported Artifacts (>25MB) ──────────────────────────────
+runs/
+my_model_*/
+*.pt
+*.onnx
+*.tflite
+!models/*.tflite
+*.engine
+*.bin
+*.pth
+*.weights
+
+# ── Backups & Checkpoints ───────────────────────────────────────────────────
+notebook_backups/
+.ipynb_checkpoints/
+__pycache__/
+*.pyc
+
+# ── OS & Local Files ────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
